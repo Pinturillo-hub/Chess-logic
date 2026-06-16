@@ -6,7 +6,7 @@
 }
 
 :root {
-    --bg-primary: #990000;
+    --bg-primary: #9c3421;
     --bg-secondary: #000000;
     --cell-dark: #353535;
     --cell-light: #e8e8e8;
@@ -297,10 +297,10 @@ body {
 }
 
 @keyframes board-pan {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(2px, -1px); }
-    50% { transform: translate(-1px, 2px); }
-    75% { transform: translate(1px, -2px); }
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(3px, -1px) rotate(0.5deg); }
+    50% { transform: translate(-1px, 3px) rotate(-0.5deg); }
+    75% { transform: translate(1px, -3px) rotate(0.3deg); }
 }
 
 /* ==================== BOARD ==================== */
