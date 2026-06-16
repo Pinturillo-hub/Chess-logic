@@ -215,7 +215,7 @@ function toggleClock() {
 
 function startClock() {
     isClockRunning = true;
-    timeRemaining = 60;
+    timeRemaining = 59;
 
     timeOverlay.classList.add('hidden');
     clockIcon.classList.add('hidden');
@@ -257,9 +257,7 @@ function showTimeOverlay() {
 }
 
 function updateClockDisplay() {
-    const min = Math.floor(timeRemaining / 60);
-    const sec = timeRemaining % 60;
-    clockText.textContent = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    clockText.textContent = timeRemaining;
 }
 
 // ==================== EVENT LISTENERS ====================
