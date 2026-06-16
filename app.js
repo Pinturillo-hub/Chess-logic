@@ -359,6 +359,14 @@ function stopClock() {
     state.timerInterval = null;
 }
 
+function resetClock() {
+    stopClock();
+    dom.clockIcon.classList.remove('hidden');
+    dom.clockText.classList.add('hidden');
+    dom.btnClock.classList.remove('running', 'time-out');
+    dom.timeOverlay.classList.add('hidden');
+}
+
 function updateClockDisplay() {
     dom.clockText.textContent = state.timeRemaining;
 }
@@ -392,6 +400,7 @@ function showGameScreen() {
 function handleNext() {
     if (state.isAnimating) return;
     Sound.play('flip');
+    resetClock();
     state.isAnimating = true;
     setControlsDisabled(true);
 
