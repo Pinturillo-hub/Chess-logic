@@ -1,230 +1,235 @@
 /**
- * Chess Study - PWA Juego de Lógica
- * Vanilla JS - Sin dependencias externas
+ * Chess Study - Logic Game PWA
+ * Vanilla JS - Zero dependencies
  */
 
-// ==================== DEFINICIÓN DE PIEZAS ====================
+'use strict';
 
-const PIEZAS = [
-    { nombre: 'Rey', archivo: 'assets/images/rey.svg' },
-    { nombre: 'Dama', archivo: 'assets/images/dama.svg' },
-    { nombre: 'Torre', archivo: 'assets/images/torre.svg' },
-    { nombre: 'Alfil', archivo: 'assets/images/alfil.svg' },
-    { nombre: 'Caballo', archivo: 'assets/images/caballo.svg' }
+// ==================== CONFIGURATION ====================
+
+const CONFIG = {
+    PIECES: [
+        { name: 'King', src: 'assets/images/rey.svg' },
+        { name: 'Queen', src: 'assets/images/dama.svg' },
+        { name: 'Rook', src: 'assets/images/torre.svg' },
+        { name: 'Bishop', src: 'assets/images/alfil.svg' },
+        { name: 'Knight', src: 'assets/images/caballo.svg' },
+    ],
+    BOARD_SIZE: 3,
+    PIECE_COUNT: 5,
+    TIMER_SECONDS: 59,
+    DANGER_THRESHOLD: 10,
+    OVERLAY_DURATION: 2000,
+    ROTATION_STEP: 90,
+    ANIMATION_DURATION: 300,
+    ANIMATION_EASING: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    CLONE_EXIT_DURATION: 350,
+};
+
+// ==================== STATE ====================
+
+const state = {
+    board: Array.from({ length: CONFIG.BOARD_SIZE }, () =>
+        Array(CONFIG.BOARD_SIZE).fill(null)
+    ),
+    timeRemaining: CONFIG.TIMER_SECONDS,
+    timerInterval: null,
+    isClockRunning: false,
+    isAnimating: false,
+    boardRotation: 0,
+    overlayTimeout: null,
+};
+
+// ==================== DOM REFERENCES ====================
+
+const dom = {
+    welcomeScreen: document.getElementById('welcome-screen'),
+    gameScreen: document.getElementById('game-screen'),
+    btnStart: document.getElementById('btn-start'),
+    board: document.getElementById('board'),
+    cells: document.querySelectorAll('.cell'),
+    btnRotateLeft: document.getElementById('btn-rotate-left'),
+    btnRotateRight: document.getElementById('btn-rotate-right'),
+    btnMirrorH: document.getElementById('btn-mirror-h'),
+    btnMirrorV: document.getElementById('btn-mirror-v'),
+    btnClock: document.getElementById('btn-clock'),
+    clockIcon: document.getElementById('clock-icon'),
+    clockText: document.getElementById('clock-text'),
+    btnNext: document.getElementById('btn-next'),
+    timeOverlay: document.getElementById('time-overlay'),
+    controlButtons: null,
+};
+
+dom.controlButtons = [
+    dom.btnRotateLeft,
+    dom.btnRotateRight,
+    dom.btnMirrorH,
+    dom.btnMirrorV,
+    dom.btnNext,
 ];
 
-// ==================== ESTADO DEL JUEGO ====================
+// ==================== BOARD ====================
 
-// Tablero 3x3: null = vacío, string = emoji de pieza
-const board = [
-    [null, null, null],
-    [null, null, null],
-    [null, null, null]
-];
+function generateCard() {
+    state.boardRotation = 0;
+    dom.board.style.transition = 'none';
+    dom.board.style.transform = '';
 
-let timeRemaining = 60;
-let timerInterval = null;
-let isClockRunning = false;
-let isAnimating = false;
-let boardRotation = 0;
+    const positions = Array.from({ length: CONFIG.BOARD_SIZE ** 2 }, (_, i) => i);
 
-// ==================== GENERACIÓN DE TARJETAS ====================
-
-/**
- * Genera una tarjeta aleatoria con 5 piezas en posiciones aleatorias.
- */
-function generarTarjeta() {
-    boardRotation = 0;
-    boardEl.style.transition = 'none';
-    boardEl.style.transform = '';
-
-    const posiciones = Array.from({ length: 9 }, (_, i) => i);
-
-    // Fisher-Yates shuffle
-    for (let i = posiciones.length - 1; i > 0; i--) {
+    for (let i = positions.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [posiciones[i], posiciones[j]] = [posiciones[j], posiciones[i]];
+        [positions[i], positions[j]] = [positions[j], positions[i]];
     }
 
-    // Vaciar tablero
-    for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-            board[r][c] = null;
-        }
-    }
+    state.board.forEach(row => row.fill(null));
 
-    // Colocar las 5 piezas
-    for (let i = 0; i < PIEZAS.length; i++) {
-        const pos = posiciones[i];
-        const fila = Math.floor(pos / 3);
-        const col = pos % 3;
-        board[fila][col] = PIEZAS[i].archivo;
+    for (let i = 0; i < CONFIG.PIECE_COUNT; i++) {
+        const pos = positions[i];
+        const row = Math.floor(pos / CONFIG.BOARD_SIZE);
+        const col = pos % CONFIG.BOARD_SIZE;
+        state.board[row][col] = CONFIG.PIECES[i].src;
     }
 
     renderBoard();
 }
 
-// ==================== ELEMENTOS DOM ====================
+function renderBoard() {
+    dom.cells.forEach(cell => {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        const pieceSrc = state.board[row][col];
 
-const welcomeScreen = document.getElementById('welcome-screen');
-const gameScreen = document.getElementById('game-screen');
-const btnStart = document.getElementById('btn-start');
-const boardEl = document.getElementById('board');
-const cells = document.querySelectorAll('.cell');
+        cell.innerHTML = '';
 
-const btnRotateLeft = document.getElementById('btn-rotate-left');
-const btnRotateRight = document.getElementById('btn-rotate-right');
-const btnMirrorH = document.getElementById('btn-mirror-h');
-const btnMirrorV = document.getElementById('btn-mirror-v');
+        if (pieceSrc) {
+            const img = document.createElement('img');
+            img.className = 'piece';
+            img.src = pieceSrc;
+            img.alt = CONFIG.PIECES.find(p => p.src === pieceSrc)?.name || '';
+            img.draggable = false;
 
-const btnClock = document.getElementById('btn-clock');
-const clockIcon = document.getElementById('clock-icon');
-const clockText = document.getElementById('clock-text');
-const btnNext = document.getElementById('btn-next');
-const timeOverlay = document.getElementById('time-overlay');
+            if (state.boardRotation !== 0) {
+                img.style.transform = `rotateZ(${-state.boardRotation}deg)`;
+            }
 
-// ==================== NAVEGACIÓN DE PANTALLAS ====================
+            cell.appendChild(img);
+        }
+    });
+}
 
-function showGameScreen() {
-    welcomeScreen.classList.add('hidden');
-    gameScreen.classList.remove('hidden');
-    generarTarjeta();
-
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        const el = document.documentElement;
-        if (el.requestFullscreen) {
-            el.requestFullscreen().catch(() => {});
-        } else if (el.webkitRequestFullscreen) {
-            el.webkitRequestFullscreen();
+function copyBoard(source) {
+    for (let r = 0; r < CONFIG.BOARD_SIZE; r++) {
+        for (let c = 0; c < CONFIG.BOARD_SIZE; c++) {
+            state.board[r][c] = source[r][c];
         }
     }
 }
 
-// ==================== RENDERIZADO DEL TABLERO ====================
+// ==================== BOARD ANIMATION ====================
 
-function renderBoard() {
-    cells.forEach(cell => {
-        const row = parseInt(cell.dataset.row);
-        const col = parseInt(cell.dataset.col);
-        const piece = board[row][col];
-        if (piece) {
-            cell.innerHTML = '<img class="piece" src="' + piece + '" alt="" draggable="false">';
-            if (boardRotation !== 0) {
-                cell.querySelector('.piece').style.transform = 'rotateZ(' + (-boardRotation) + 'deg)';
-            }
-        } else {
-            cell.innerHTML = '';
-        }
-    });
+function setControlsDisabled(disabled) {
+    dom.controlButtons.forEach(btn => { btn.disabled = disabled; });
 }
 
-// ==================== ANIMACIÓN DEL TABLERO ====================
-
 function animateRotation(targetAngle) {
-    if (isAnimating) return;
-    isAnimating = true;
+    if (state.isAnimating) return;
+    state.isAnimating = true;
     setControlsDisabled(true);
 
-    boardRotation = targetAngle;
+    state.boardRotation = targetAngle;
 
-    const pieces = boardEl.querySelectorAll('.piece');
+    const pieces = dom.board.querySelectorAll('.piece');
+    const duration = `${CONFIG.ANIMATION_DURATION}ms`;
+    const easing = CONFIG.ANIMATION_EASING;
+    const transition = `transform ${duration} ${easing}`;
+
     pieces.forEach(p => {
-        p.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-        p.style.transform = 'rotateZ(' + (-targetAngle) + 'deg)';
+        p.style.transition = transition;
+        p.style.transform = `rotateZ(${-targetAngle}deg)`;
     });
 
-    boardEl.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-    boardEl.style.transform = 'rotateZ(' + targetAngle + 'deg)';
+    dom.board.style.transition = transition;
+    dom.board.style.transform = `rotateZ(${targetAngle}deg)`;
 
-    boardEl.addEventListener('transitionend', function handler(e) {
-        if (e.target !== boardEl) return;
-        boardEl.removeEventListener('transitionend', handler);
-        boardEl.style.transition = '';
+    const handler = (e) => {
+        if (e.target !== dom.board) return;
+        dom.board.removeEventListener('transitionend', handler);
+        dom.board.style.transition = '';
         pieces.forEach(p => { p.style.transition = ''; });
-
-        isAnimating = false;
+        state.isAnimating = false;
         setControlsDisabled(false);
-    });
+    };
+
+    dom.board.addEventListener('transitionend', handler);
 }
 
 function animateFlip(inverseTransform, transformFn, counterClass) {
-    if (isAnimating) return;
-    isAnimating = true;
+    if (state.isAnimating) return;
+    state.isAnimating = true;
     setControlsDisabled(true);
 
-    boardRotation = 0;
+    state.boardRotation = 0;
 
     transformFn();
     renderBoard();
 
     if (counterClass) {
-        boardEl.classList.add(counterClass);
+        dom.board.classList.add(counterClass);
     }
 
-    boardEl.style.transition = 'none';
-    boardEl.style.transform = inverseTransform;
-    boardEl.offsetHeight;
+    const transition = `transform ${CONFIG.ANIMATION_DURATION}ms ${CONFIG.ANIMATION_EASING}`;
 
-    boardEl.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-    boardEl.style.transform = '';
+    dom.board.style.transition = 'none';
+    dom.board.style.transform = inverseTransform;
+    dom.board.offsetHeight;
 
-    boardEl.addEventListener('transitionend', function handler(e) {
-        if (e.target !== boardEl) return;
-        boardEl.removeEventListener('transitionend', handler);
-        boardEl.style.transition = '';
+    dom.board.style.transition = transition;
+    dom.board.style.transform = '';
+
+    const handler = (e) => {
+        if (e.target !== dom.board) return;
+        dom.board.removeEventListener('transitionend', handler);
+        dom.board.style.transition = '';
 
         if (counterClass) {
-            boardEl.classList.remove(counterClass);
+            dom.board.classList.remove(counterClass);
         }
-        isAnimating = false;
+        state.isAnimating = false;
         setControlsDisabled(false);
-    });
+    };
+
+    dom.board.addEventListener('transitionend', handler);
 }
 
-/**
- * Habilita/deshabilita controles durante animación
- */
-function setControlsDisabled(disabled) {
-    const allBtns = [btnRotateLeft, btnRotateRight, btnMirrorH, btnMirrorV, btnNext];
-    allBtns.forEach(btn => btn.disabled = disabled);
-}
-
-// ==================== ROTACIÓN Y ESPEJO ====================
+// ==================== ROTATION & MIRROR ====================
 
 function rotateLeft() {
-    animateRotation(boardRotation - 90);
+    animateRotation(state.boardRotation - CONFIG.ROTATION_STEP);
 }
 
 function rotateRight() {
-    animateRotation(boardRotation + 90);
+    animateRotation(state.boardRotation + CONFIG.ROTATION_STEP);
 }
 
 function mirrorHorizontal() {
     animateFlip('rotateY(180deg)', () => {
-        const temp = board.map(row => [...row].reverse());
+        const temp = state.board.map(row => [...row].reverse());
         copyBoard(temp);
     }, 'flip-h');
 }
 
 function mirrorVertical() {
     animateFlip('rotateX(180deg)', () => {
-        const temp = board.map(row => [...row]).reverse();
+        const temp = [...state.board].reverse().map(row => [...row]);
         copyBoard(temp);
     }, 'flip-v');
 }
 
-function copyBoard(source) {
-    for (let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-            board[r][c] = source[r][c];
-        }
-    }
-}
-
-// ==================== CRONÓMETRO ====================
+// ==================== TIMER ====================
 
 function toggleClock() {
-    if (isClockRunning) {
+    if (state.isClockRunning) {
         stopClock();
     } else {
         startClock();
@@ -232,92 +237,119 @@ function toggleClock() {
 }
 
 function startClock() {
-    isClockRunning = true;
-    timeRemaining = 59;
+    state.isClockRunning = true;
+    state.timeRemaining = CONFIG.TIMER_SECONDS;
 
-    timeOverlay.classList.add('hidden');
-    clockIcon.classList.add('hidden');
-    clockText.classList.remove('hidden');
-    clockText.classList.remove('danger');
+    dom.timeOverlay.classList.add('hidden');
+    dom.clockIcon.classList.add('hidden');
+    dom.clockText.classList.remove('hidden');
+    dom.clockText.classList.remove('danger');
     updateClockDisplay();
 
-    btnClock.classList.add('running');
-    btnClock.classList.remove('time-out');
+    dom.btnClock.classList.add('running');
+    dom.btnClock.classList.remove('time-out');
 
-    timerInterval = setInterval(() => {
-        timeRemaining--;
+    state.timerInterval = setInterval(() => {
+        state.timeRemaining--;
         updateClockDisplay();
 
-        if (timeRemaining <= 10) {
-            clockText.classList.add('danger');
+        if (state.timeRemaining <= CONFIG.DANGER_THRESHOLD) {
+            dom.clockText.classList.add('danger');
         }
 
-        if (timeRemaining <= 0) {
+        if (state.timeRemaining <= 0) {
             stopClock();
-            btnClock.classList.remove('running');
-            btnClock.classList.add('time-out');
+            dom.btnClock.classList.remove('running');
+            dom.btnClock.classList.add('time-out');
             showTimeOverlay();
         }
     }, 1000);
 }
 
 function stopClock() {
-    isClockRunning = false;
-    clearInterval(timerInterval);
-    timerInterval = null;
-}
-
-function showTimeOverlay() {
-    timeOverlay.classList.remove('hidden');
-    setTimeout(() => {
-        timeOverlay.classList.add('hidden');
-    }, 2000);
+    state.isClockRunning = false;
+    clearInterval(state.timerInterval);
+    state.timerInterval = null;
 }
 
 function updateClockDisplay() {
-    clockText.textContent = timeRemaining;
+    dom.clockText.textContent = state.timeRemaining;
 }
 
-// ==================== EVENT LISTENERS ====================
+function showTimeOverlay() {
+    clearTimeout(state.overlayTimeout);
+    dom.timeOverlay.classList.remove('hidden');
+    state.overlayTimeout = setTimeout(() => {
+        dom.timeOverlay.classList.add('hidden');
+    }, CONFIG.OVERLAY_DURATION);
+}
 
-btnStart.addEventListener('click', showGameScreen);
+// ==================== SCREEN NAVIGATION ====================
 
-btnRotateLeft.addEventListener('click', rotateLeft);
-btnRotateRight.addEventListener('click', rotateRight);
-btnMirrorH.addEventListener('click', mirrorHorizontal);
-btnMirrorV.addEventListener('click', mirrorVertical);
+function showGameScreen() {
+    dom.welcomeScreen.classList.add('hidden');
+    dom.gameScreen.classList.remove('hidden');
+    generateCard();
 
-btnClock.addEventListener('click', toggleClock);
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const el = document.documentElement;
+        const requestFS = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (requestFS) {
+            requestFS.call(el).catch(() => {});
+        }
+    }
+}
 
-btnNext.addEventListener('click', () => {
-    if (isAnimating) return;
-    isAnimating = true;
+function handleNext() {
+    if (state.isAnimating) return;
+    state.isAnimating = true;
     setControlsDisabled(true);
 
-    const clone = boardEl.cloneNode(true);
+    const clone = dom.board.cloneNode(true);
     clone.classList.add('board-clone');
     clone.removeAttribute('id');
     clone.style.cssText = '';
-    boardEl.parentElement.appendChild(clone);
+    dom.board.parentElement.appendChild(clone);
 
-    generarTarjeta();
+    generateCard();
 
     clone.offsetHeight;
     clone.classList.add('exit-left');
 
-    clone.addEventListener('transitionend', function handler(e) {
+    const handler = (e) => {
         if (e.target !== clone) return;
         clone.removeEventListener('transitionend', handler);
         clone.remove();
-        isAnimating = false;
+        state.isAnimating = false;
         setControlsDisabled(false);
-    });
-});
+    };
+
+    clone.addEventListener('transitionend', handler);
+}
+
+// ==================== EVENT BINDING ====================
+
+function bindEvents() {
+    dom.btnStart.addEventListener('click', showGameScreen);
+    dom.btnRotateLeft.addEventListener('click', rotateLeft);
+    dom.btnRotateRight.addEventListener('click', rotateRight);
+    dom.btnMirrorH.addEventListener('click', mirrorHorizontal);
+    dom.btnMirrorV.addEventListener('click', mirrorVertical);
+    dom.btnClock.addEventListener('click', toggleClock);
+    dom.btnNext.addEventListener('click', handleNext);
+}
 
 // ==================== SERVICE WORKER ====================
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('SW registrado:', reg.scope))
-        .catch(err => console.log('Error SW:', err));
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('SW registered:', reg.scope))
+            .catch(err => console.error('SW error:', err));
+    }
 }
+
+// ==================== INIT ====================
+
+bindEvents();
+registerServiceWorker();

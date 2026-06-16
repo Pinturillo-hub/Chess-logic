@@ -1,3 +1,4 @@
+/* ==================== FONTS ==================== */
 @font-face {
     font-family: 'NintendoNES';
     src: url('assets/fonts/nintendo-nes-font.otf.woff2') format('woff2');
@@ -5,8 +6,11 @@
     font-style: normal;
 }
 
+/* ==================== DESIGN TOKENS ==================== */
 :root {
-    --bg-primary: hsl(var(--bg-hue), 100%, 30%);
+    /* Colors */
+    --bg-primary: #990000;
+    --bg-primary-hsl: hsl(var(--bg-hue, 0), 100%, 30%);
     --bg-secondary: #000000;
     --cell-dark: #353535;
     --cell-light: #e8e8e8;
@@ -19,16 +23,38 @@
     --control-bg: #202020;
     --control-hover: #333333;
     --board-border: #333333;
-    --btn-bleed: color-mix(in srgb, var(--accent) 20%, transparent);
-    --btn-bleed-strong: color-mix(in srgb, var(--accent) 30%, transparent);
+    --cell-border: rgba(255, 255, 255, 0.08);
+    --clock-border: #dddddd;
+    --clock-border-running: #aaaaaa;
+
+    /* Button glow (with fallback for color-mix) */
+    --btn-bleed: rgba(255, 255, 255, 0.2);
+    --btn-bleed-strong: rgba(255, 255, 255, 0.3);
+
+    /* Layout */
+    --board-max: 320px;
+    --board-radius: 20px;
+    --btn-radius: 16px;
 }
 
-* {
+/* color-mix support — overrides fallback values */
+@supports (color: color-mix(in srgb, red, blue)) {
+    :root {
+        --btn-bleed: color-mix(in srgb, var(--accent) 20%, transparent);
+        --btn-bleed-strong: color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+}
+
+/* ==================== RESET ==================== */
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* ==================== BASE ==================== */
 html, body {
     height: 100%;
     overflow: hidden;
@@ -40,14 +66,11 @@ body {
     font-family: 'NintendoNES', monospace;
 }
 
+/* ==================== HUE ANIMATION ==================== */
 @property --bg-hue {
     syntax: '<number>';
     initial-value: 0;
     inherits: true;
-}
-
-html {
-    animation: hue-shift 180s linear infinite;
 }
 
 @keyframes hue-shift {
@@ -55,11 +78,22 @@ html {
     100% { --bg-hue: 360; }
 }
 
+@supports (background: hsl(0 0% 0% / 1)) {
+    :root {
+        --bg-primary: hsl(var(--bg-hue, 0), 100%, 30%);
+    }
+
+    html {
+        animation: hue-shift 180s linear infinite;
+    }
+}
+
+/* ==================== UTILITIES ==================== */
 .hidden {
     display: none !important;
 }
 
-/* ==================== SCREENS ==================== */
+/* ==================== CRT SCREENS ==================== */
 .screen {
     width: 100%;
     height: 100vh;
@@ -70,7 +104,7 @@ html {
     overflow: hidden;
 }
 
-/* Viñeta CRT */
+/* Vignette */
 .screen::before {
     content: '';
     position: absolute;
@@ -80,7 +114,7 @@ html {
     z-index: 20;
 }
 
-/* Scanlines CRT */
+/* Scanlines */
 .screen::after {
     content: '';
     position: absolute;
@@ -113,7 +147,7 @@ html {
     width: 5rem;
     height: 5rem;
     margin-bottom: 1rem;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
     animation: pulse 2s ease-in-out infinite;
 }
 
@@ -128,12 +162,18 @@ html {
     color: var(--accent);
     margin-bottom: 0.5rem;
     letter-spacing: -1px;
+    text-shadow:
+        -1.5px 0 rgba(255, 0, 0, 0.35),
+        1.5px 0 rgba(0, 200, 255, 0.35);
 }
 
 .welcome-subtitle {
     font-size: 1rem;
     color: var(--text-secondary);
     margin-bottom: 2.5rem;
+    text-shadow:
+        -1.5px 0 rgba(255, 0, 0, 0.35),
+        1.5px 0 rgba(0, 200, 255, 0.35);
 }
 
 .btn-start {
@@ -151,6 +191,9 @@ html {
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     box-shadow: 0 4px 20px var(--btn-bleed);
+    text-shadow:
+        -1.5px 0 rgba(255, 0, 0, 0.35),
+        1.5px 0 rgba(0, 200, 255, 0.35);
 }
 
 .btn-start:hover {
@@ -180,7 +223,7 @@ html {
     overflow: hidden;
 }
 
-/* ==================== CRT SCREEN (barrel distortion wrapper) ==================== */
+/* ==================== CRT WRAPPER ==================== */
 .crt-screen {
     display: flex;
     flex-direction: column;
@@ -198,9 +241,10 @@ html {
         inset 0 0 200px rgba(0, 0, 0, 0.4),
         0 0 40px rgba(0, 0, 0, 0.6);
     background: var(--bg-primary);
+    isolation: isolate;
 }
 
-/* Scanbar: línea de refresco que cruza la pantalla */
+/* ==================== CRT SCANBAR ==================== */
 .crt-scanbar {
     position: absolute;
     top: -10%;
@@ -225,13 +269,8 @@ html {
     100% { top: 110%; }
 }
 
-/* ==================== ABERRACIÓN CRÓMÁTICA ==================== */
-.crt-aberration {
-    text-shadow:
-        -1.5px 0 rgba(255, 0, 0, 0.4),
-        1.5px 0 rgba(0, 200, 255, 0.4);
-}
-
+/* ==================== CRT CHROMATIC ABERRATION ==================== */
+.crt-aberration,
 .crt-screen .controls-top,
 .crt-screen .controls-bottom,
 .crt-screen .board {
@@ -246,20 +285,12 @@ html {
         1px 0 rgba(0, 200, 255, 0.3);
 }
 
-.welcome-title,
-.welcome-subtitle,
-.btn-start {
-    text-shadow:
-        -1.5px 0 rgba(255, 0, 0, 0.35),
-        1.5px 0 rgba(0, 200, 255, 0.35);
-}
-
 /* ==================== TOP CONTROLS ==================== */
 .controls-top {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
-    max-width: 320px;
+    max-width: var(--board-max);
     width: 100%;
 }
 
@@ -271,12 +302,13 @@ html {
     justify-content: center;
     background: var(--accent);
     border: none;
-    border-radius: 16px;
+    border-radius: var(--btn-radius);
     color: var(--bg-primary);
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     box-shadow: 0 4px 15px var(--btn-bleed);
     -webkit-tap-highlight-color: transparent;
+    mix-blend-mode: screen;
 }
 
 .control-btn:disabled {
@@ -324,29 +356,28 @@ html {
     grid-template-columns: repeat(3, 1fr);
     gap: 0;
     width: 100%;
-    max-width: 320px;
+    max-width: var(--board-max);
     aspect-ratio: 1 / 1;
     background: var(--board-border);
-    padding: 0;
-    border-radius: 20px;
+    border-radius: var(--board-radius);
     border: 3px solid var(--board-border);
     transform-style: preserve-3d;
     position: relative;
     z-index: 1;
 }
 
-/* ==================== CLONE (para animación Siguiente) ==================== */
+/* ==================== BOARD CLONE (Next animation) ==================== */
 .board-clone {
     position: absolute;
     inset: 0;
     margin: auto;
     width: 100%;
-    max-width: 320px;
+    max-width: var(--board-max);
     aspect-ratio: 1 / 1;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     background: var(--board-border);
-    border-radius: 20px;
+    border-radius: var(--board-radius);
     border: 3px solid var(--board-border);
     z-index: 2;
     pointer-events: none;
@@ -360,14 +391,13 @@ html {
     justify-content: center;
     font-size: 2.5rem;
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--cell-border);
     border-radius: 4px;
 }
 
 .board-clone.exit-left {
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateX(-120%) rotateZ(-8deg);
-    opacity: 0;
 }
 
 /* ==================== PIECES ==================== */
@@ -396,7 +426,7 @@ html {
     to { transform: rotateX(0deg); }
 }
 
-/* ==================== CELLS - CHECKERBOARD ==================== */
+/* ==================== CELLS ==================== */
 .cell {
     aspect-ratio: 1 / 1;
     display: flex;
@@ -407,21 +437,16 @@ html {
     cursor: default;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--cell-border);
     border-radius: 4px;
 }
 
-/* Fila 1: dark, light, dark */
 .cell:nth-child(1) { background: var(--cell-dark); }
 .cell:nth-child(2) { background: var(--cell-light); }
 .cell:nth-child(3) { background: var(--cell-dark); }
-
-/* Fila 2: light, dark, light */
 .cell:nth-child(4) { background: var(--cell-light); }
 .cell:nth-child(5) { background: var(--cell-dark); }
 .cell:nth-child(6) { background: var(--cell-light); }
-
-/* Fila 3: dark, light, dark */
 .cell:nth-child(7) { background: var(--cell-dark); }
 .cell:nth-child(8) { background: var(--cell-light); }
 .cell:nth-child(9) { background: var(--cell-dark); }
@@ -447,7 +472,6 @@ html {
 }
 
 .time-overlay-text {
-    font-family: 'NintendoNES', monospace;
     font-size: clamp(2rem, 15vw, 5rem);
     font-weight: 900;
     color: var(--danger);
@@ -487,14 +511,14 @@ html {
     padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+/* ==================== CLOCK BUTTON ==================== */
 .btn-clock {
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    background: #ffffff;
-    border: 2px solid #dddddd;
+    background: var(--accent);
+    border: 2px solid var(--clock-border);
     color: var(--bg-primary);
-    font-size: 2rem;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -516,7 +540,7 @@ html {
 }
 
 .btn-clock.running {
-    border-color: #aaaaaa;
+    border-color: var(--clock-border-running);
 }
 
 .btn-clock.time-out {
@@ -525,8 +549,16 @@ html {
 
 .clock-icon {
     display: flex;
-    align-items: center;
-    justify-content: center;
+}
+
+.btn-clock.running .clock-icon,
+.btn-clock.time-out .clock-icon {
+    display: none;
+}
+
+.btn-clock.running .clock-text,
+.btn-clock.time-out .clock-text {
+    display: block;
 }
 
 .clock-icon svg {
@@ -548,6 +580,7 @@ html {
     color: var(--danger);
 }
 
+/* ==================== NEXT BUTTON ==================== */
 .btn-next {
     flex: 1;
     max-width: 200px;
@@ -556,14 +589,15 @@ html {
     font-family: 'NintendoNES', monospace;
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--bg-primary);
+    color: #000000;
     background: var(--accent);
     border: none;
-    border-radius: 16px;
+    border-radius: var(--btn-radius);
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     box-shadow: 0 4px 15px var(--btn-bleed);
     -webkit-tap-highlight-color: transparent;
+    mix-blend-mode: screen;
 }
 
 .btn-next:hover {
@@ -577,22 +611,13 @@ html {
 
 /* ==================== RESPONSIVE ==================== */
 @media (min-width: 400px) {
-    .board {
-        max-width: 360px;
-    }
-
-    .board-clone {
-        max-width: 360px;
-    }
-
+    .board,
+    .board-clone,
     .controls-top {
         max-width: 360px;
     }
 
-    .cell {
-        font-size: 3rem;
-    }
-
+    .cell,
     .board-clone .cell {
         font-size: 3rem;
     }
@@ -600,19 +625,11 @@ html {
 
 @media (orientation: landscape) {
     .game-screen {
-        padding: 0;
-        padding-left: 2rem;
-        padding-right: 2rem;
+        padding: 0 2rem;
     }
 
-    .board {
-        max-width: 260px;
-    }
-
-    .board-clone {
-        max-width: 260px;
-    }
-
+    .board,
+    .board-clone,
     .controls-top {
         max-width: 260px;
     }
