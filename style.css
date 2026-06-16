@@ -293,6 +293,14 @@ body {
     gap: 1rem;
     perspective: 800px;
     position: relative;
+    animation: board-pan 8s ease-in-out infinite;
+}
+
+@keyframes board-pan {
+    0%, 100% { transform: translate(0, 0); }
+    25% { transform: translate(2px, -1px); }
+    50% { transform: translate(-1px, 2px); }
+    75% { transform: translate(1px, -2px); }
 }
 
 /* ==================== BOARD ==================== */
@@ -308,7 +316,6 @@ body {
     border-radius: 20px;
     border: 3px solid var(--board-border);
     transform-style: preserve-3d;
-    transition: none;
     position: relative;
     z-index: 1;
 }
@@ -354,7 +361,6 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .board.flip-h .piece {

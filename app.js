@@ -26,6 +26,7 @@ let timeRemaining = 60;
 let timerInterval = null;
 let isClockRunning = false;
 let isAnimating = false;
+let boardRotation = 0;
 
 // ==================== GENERACIÓN DE TARJETAS ====================
 
@@ -33,6 +34,10 @@ let isAnimating = false;
  * Genera una tarjeta aleatoria con 5 piezas en posiciones aleatorias.
  */
 function generarTarjeta() {
+    boardRotation = 0;
+    boardEl.style.transition = 'none';
+    boardEl.style.transform = '';
+
     const posiciones = Array.from({ length: 9 }, (_, i) => i);
 
     // Fisher-Yates shuffle
@@ -104,6 +109,9 @@ function renderBoard() {
         const piece = board[row][col];
         if (piece) {
             cell.innerHTML = '<img class="piece" src="' + piece + '" alt="" draggable="false">';
+            if (boardRotation !== 0) {
+                cell.querySelector('.piece').style.transform = 'rotateZ(' + (-boardRotation) + 'deg)';
+            }
         } else {
             cell.innerHTML = '';
         }
@@ -112,16 +120,39 @@ function renderBoard() {
 
 // ==================== ANIMACIÓN DEL TABLERO ====================
 
-/**
- * Ejecuta una animación en el tablero y aplica la transformación al datos.
- * @param {string} animationClass - Clase CSS de animación
- * @param {Function} transformFn - Función que transforma el board
- */
-function animateBoard(inverseTransform, transformFn, counterClass) {
+function animateRotation(targetAngle) {
     if (isAnimating) return;
-
     isAnimating = true;
     setControlsDisabled(true);
+
+    boardRotation = targetAngle;
+
+    const pieces = boardEl.querySelectorAll('.piece');
+    pieces.forEach(p => {
+        p.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        p.style.transform = 'rotateZ(' + (-targetAngle) + 'deg)';
+    });
+
+    boardEl.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    boardEl.style.transform = 'rotateZ(' + targetAngle + 'deg)';
+
+    boardEl.addEventListener('transitionend', function handler(e) {
+        if (e.target !== boardEl) return;
+        boardEl.removeEventListener('transitionend', handler);
+        boardEl.style.transition = '';
+        pieces.forEach(p => { p.style.transition = ''; });
+
+        isAnimating = false;
+        setControlsDisabled(false);
+    });
+}
+
+function animateFlip(inverseTransform, transformFn, counterClass) {
+    if (isAnimating) return;
+    isAnimating = true;
+    setControlsDisabled(true);
+
+    boardRotation = 0;
 
     transformFn();
     renderBoard();
@@ -141,6 +172,7 @@ function animateBoard(inverseTransform, transformFn, counterClass) {
         if (e.target !== boardEl) return;
         boardEl.removeEventListener('transitionend', handler);
         boardEl.style.transition = '';
+
         if (counterClass) {
             boardEl.classList.remove(counterClass);
         }
@@ -160,36 +192,22 @@ function setControlsDisabled(disabled) {
 // ==================== ROTACIÓN Y ESPEJO ====================
 
 function rotateLeft() {
-    animateBoard('rotateZ(90deg)', () => {
-        const temp = [
-            [board[0][2], board[1][2], board[2][2]],
-            [board[0][1], board[1][1], board[2][1]],
-            [board[0][0], board[1][0], board[2][0]]
-        ];
-        copyBoard(temp);
-    });
+    animateRotation(boardRotation - 90);
 }
 
 function rotateRight() {
-    animateBoard('rotateZ(-90deg)', () => {
-        const temp = [
-            [board[2][0], board[1][0], board[0][0]],
-            [board[2][1], board[1][1], board[0][1]],
-            [board[2][2], board[1][2], board[0][2]]
-        ];
-        copyBoard(temp);
-    });
+    animateRotation(boardRotation + 90);
 }
 
 function mirrorHorizontal() {
-    animateBoard('rotateY(180deg)', () => {
+    animateFlip('rotateY(180deg)', () => {
         const temp = board.map(row => [...row].reverse());
         copyBoard(temp);
     }, 'flip-h');
 }
 
 function mirrorVertical() {
-    animateBoard('rotateX(180deg)', () => {
+    animateFlip('rotateX(180deg)', () => {
         const temp = board.map(row => [...row]).reverse();
         copyBoard(temp);
     }, 'flip-v');
