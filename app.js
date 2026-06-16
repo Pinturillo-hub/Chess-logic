@@ -153,15 +153,17 @@ function animateRotation(targetAngle) {
     dom.board.style.transform = `rotateZ(${targetAngle}deg)`;
 
     const handler = (e) => {
-        if (e.target !== dom.board) return;
-        dom.board.removeEventListener('transitionend', handler);
-        dom.board.style.transition = '';
-        pieces.forEach(p => { p.style.transition = ''; });
-        state.isAnimating = false;
-        setControlsDisabled(false);
-    };
-
+    if (e && e.target !== dom.board) return;
+    dom.board.removeEventListener('transitionend', handler);
+    clearTimeout(backupTimeout); // Limpiamos el salvavidas
+    dom.board.style.transition = '';
+    pieces.forEach(p => { p.style.transition = ''; });
+    state.isAnimating = false;
+    setControlsDisabled(false);
+};
     dom.board.addEventListener('transitionend', handler);
+// Salvavidas: Si en 350ms no ha terminado, forzamos el final
+    const backupTimeout = setTimeout(handler, CONFIG.ANIMATION_DURATION + 50);
 }
 
 function animateFlip(inverseTransform, transformFn, counterClass) {
@@ -187,19 +189,25 @@ function animateFlip(inverseTransform, transformFn, counterClass) {
     dom.board.style.transition = transition;
     dom.board.style.transform = '';
 
-    const handler = (e) => {
-        if (e.target !== dom.board) return;
+ const handler = (e) => {
+        // Si hay evento (no es el timeout) y el objetivo no es el tablero, ignoramos
+        if (e && e.target !== dom.board) return; 
+        
         dom.board.removeEventListener('transitionend', handler);
+        clearTimeout(backupTimeout); // Limpiamos el salvavidas
+        
         dom.board.style.transition = '';
-
         if (counterClass) {
             dom.board.classList.remove(counterClass);
         }
+        
         state.isAnimating = false;
         setControlsDisabled(false);
     };
 
     dom.board.addEventListener('transitionend', handler);
+    // Salvavidas de 350ms (ANIMATION_DURATION + 50)
+    const backupTimeout = setTimeout(handler, CONFIG.ANIMATION_DURATION + 50);
 }
 
 // ==================== ROTATION & MIRROR ====================
@@ -316,15 +324,21 @@ function handleNext() {
     clone.offsetHeight;
     clone.classList.add('exit-left');
 
-    const handler = (e) => {
-        if (e.target !== clone) return;
+const handler = (e) => {
+        // Aquí comprobamos contra 'clone', no contra 'dom.board'
+        if (e && e.target !== clone) return;
+        
         clone.removeEventListener('transitionend', handler);
+        clearTimeout(backupTimeout); // Limpiamos el salvavidas
+        
         clone.remove();
         state.isAnimating = false;
         setControlsDisabled(false);
     };
 
     clone.addEventListener('transitionend', handler);
+    // Salvavidas de 400ms (CLONE_EXIT_DURATION + 50)
+    const backupTimeout = setTimeout(handler, CONFIG.CLONE_EXIT_DURATION + 50);
 }
 
 // ==================== EVENT BINDING ====================
