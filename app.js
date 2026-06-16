@@ -6,11 +6,11 @@
 // ==================== DEFINICIÓN DE PIEZAS ====================
 
 const PIEZAS = [
-    { nombre: 'Rey', archivo: 'assets/rey.svg' },
-    { nombre: 'Dama', archivo: 'assets/dama.svg' },
-    { nombre: 'Torre', archivo: 'assets/torre.svg' },
-    { nombre: 'Alfil', archivo: 'assets/alfil.svg' },
-    { nombre: 'Caballo', archivo: 'assets/caballo.svg' }
+    { nombre: 'Rey', archivo: 'assets/images/rey.svg' },
+    { nombre: 'Dama', archivo: 'assets/images/dama.svg' },
+    { nombre: 'Torre', archivo: 'assets/images/torre.svg' },
+    { nombre: 'Alfil', archivo: 'assets/images/alfil.svg' },
+    { nombre: 'Caballo', archivo: 'assets/images/caballo.svg' }
 ];
 
 // ==================== ESTADO DEL JUEGO ====================

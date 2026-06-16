@@ -1,16 +1,16 @@
-const CACHE_NAME = 'chess-study-v1';
+const CACHE_NAME = 'chess-study-v2';
 const FILES_TO_CACHE = [
     './',
     './index.html',
     './style.css',
     './app.js',
     './manifest.json',
-    './assets/rey.svg',
-    './assets/dama.svg',
-    './assets/torre.svg',
-    './assets/alfil.svg',
-    './assets/caballo.svg',
-    './assets/reloj.svg'
+    './assets/images/rey.svg',
+    './assets/images/dama.svg',
+    './assets/images/torre.svg',
+    './assets/images/alfil.svg',
+    './assets/images/caballo.svg',
+    './assets/images/reloj.svg'
 ];
 
 self.addEventListener('install', event => {
