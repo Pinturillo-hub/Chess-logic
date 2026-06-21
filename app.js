@@ -190,6 +190,7 @@ function generateCard() {
 }
 
 function renderBoard() {
+    dom.board.style.setProperty('--br', `${-state.boardRotation}deg`);
     dom.cells.forEach(cell => {
         const row = parseInt(cell.dataset.row);
         const col = parseInt(cell.dataset.col);
@@ -248,16 +249,15 @@ function animateRotation(targetAngle) {
     dom.board.style.transform = `rotateZ(${targetAngle}deg)`;
 
     const handler = (e) => {
-    if (e && e.target !== dom.board) return;
-    dom.board.removeEventListener('transitionend', handler);
-    clearTimeout(backupTimeout); // Limpiamos el salvavidas
-    dom.board.style.transition = '';
-    pieces.forEach(p => { p.style.transition = ''; });
-    state.isAnimating = false;
-    setControlsDisabled(false);
-};
+        if (e && e.target !== dom.board) return;
+        dom.board.removeEventListener('transitionend', handler);
+        clearTimeout(backupTimeout);
+        dom.board.style.transition = '';
+        pieces.forEach(p => { p.style.transition = ''; });
+        state.isAnimating = false;
+        setControlsDisabled(false);
+    };
     dom.board.addEventListener('transitionend', handler);
-// Salvavidas: Si en 350ms no ha terminado, forzamos el final
     const backupTimeout = setTimeout(handler, CONFIG.ANIMATION_DURATION + 50);
 }
 
@@ -266,8 +266,6 @@ function animateFlip(inverseTransform, transformFn, counterClass) {
     state.isAnimating = true;
     setControlsDisabled(true);
 
-    state.boardRotation = 0;
-
     transformFn();
     renderBoard();
 
@@ -275,33 +273,39 @@ function animateFlip(inverseTransform, transformFn, counterClass) {
         dom.board.classList.add(counterClass);
     }
 
+    const R = state.boardRotation;
+    const composedTransform = R !== 0
+        ? `rotateZ(${R}deg) ${inverseTransform}`
+        : inverseTransform;
+    const restoreTransform = R !== 0
+        ? `rotateZ(${R}deg)`
+        : '';
+
     const transition = `transform ${CONFIG.ANIMATION_DURATION}ms ${CONFIG.ANIMATION_EASING}`;
 
     dom.board.style.transition = 'none';
-    dom.board.style.transform = inverseTransform;
+    dom.board.style.transform = composedTransform;
     dom.board.offsetHeight;
 
     dom.board.style.transition = transition;
-    dom.board.style.transform = '';
+    dom.board.style.transform = restoreTransform;
 
- const handler = (e) => {
-        // Si hay evento (no es el timeout) y el objetivo no es el tablero, ignoramos
-        if (e && e.target !== dom.board) return; 
-        
+    const handler = (e) => {
+        if (e && e.target !== dom.board) return;
+
         dom.board.removeEventListener('transitionend', handler);
-        clearTimeout(backupTimeout); // Limpiamos el salvavidas
-        
+        clearTimeout(backupTimeout);
+
         dom.board.style.transition = '';
         if (counterClass) {
             dom.board.classList.remove(counterClass);
         }
-        
+
         state.isAnimating = false;
         setControlsDisabled(false);
     };
 
     dom.board.addEventListener('transitionend', handler);
-    // Salvavidas de 350ms (ANIMATION_DURATION + 50)
     const backupTimeout = setTimeout(handler, CONFIG.ANIMATION_DURATION + 50);
 }
 
@@ -319,18 +323,34 @@ function rotateRight() {
 
 function mirrorHorizontal() {
     Sound.play('flip');
-    animateFlip('rotateY(180deg)', () => {
-        const temp = state.board.map(row => [...row].reverse());
-        copyBoard(temp);
-    }, 'flip-h');
+    const swap = Math.abs(state.boardRotation) % 180 === 90;
+    if (swap) {
+        animateFlip('rotateX(180deg)', () => {
+            const temp = [...state.board].reverse().map(row => [...row]);
+            copyBoard(temp);
+        }, 'flip-x');
+    } else {
+        animateFlip('rotateY(180deg)', () => {
+            const temp = state.board.map(row => [...row].reverse());
+            copyBoard(temp);
+        }, 'flip-y');
+    }
 }
 
 function mirrorVertical() {
     Sound.play('flip');
-    animateFlip('rotateX(180deg)', () => {
-        const temp = [...state.board].reverse().map(row => [...row]);
-        copyBoard(temp);
-    }, 'flip-v');
+    const swap = Math.abs(state.boardRotation) % 180 === 90;
+    if (swap) {
+        animateFlip('rotateY(180deg)', () => {
+            const temp = state.board.map(row => [...row].reverse());
+            copyBoard(temp);
+        }, 'flip-y');
+    } else {
+        animateFlip('rotateX(180deg)', () => {
+            const temp = [...state.board].reverse().map(row => [...row]);
+            copyBoard(temp);
+        }, 'flip-x');
+    }
 }
 
 // ==================== TIMER ====================

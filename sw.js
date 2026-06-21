@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gambit-v2';
+const CACHE_NAME = 'gambit-v3';
 const FILES_TO_CACHE = [
     './',
     './index.html',

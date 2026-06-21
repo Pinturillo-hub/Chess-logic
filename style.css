@@ -416,17 +416,6 @@ body {
     overflow: hidden;
 }
 
-.board-clone .cell {
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    color: var(--text-primary);
-    border: 1px solid var(--cell-border);
-    border-radius: 4px;
-}
-
 .board-clone.exit-left {
     transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     transform: translateX(-120%) rotateZ(-8deg);
@@ -440,22 +429,22 @@ body {
     object-fit: contain;
 }
 
-.board.flip-h .piece {
+.board.flip-y .piece {
     animation: counter-rotate-y 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.board.flip-v .piece {
+.board.flip-x .piece {
     animation: counter-rotate-x 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes counter-rotate-y {
-    from { transform: rotateY(180deg); }
-    to { transform: rotateY(0deg); }
+    from { transform: rotateY(180deg) rotateZ(var(--br, 0deg)); }
+    to { transform: rotateY(0deg) rotateZ(var(--br, 0deg)); }
 }
 
 @keyframes counter-rotate-x {
-    from { transform: rotateX(180deg); }
-    to { transform: rotateX(0deg); }
+    from { transform: rotateX(180deg) rotateZ(var(--br, 0deg)); }
+    to { transform: rotateX(0deg) rotateZ(var(--br, 0deg)); }
 }
 
 /* ==================== CELLS ==================== */
