@@ -1,6 +1,6 @@
 {
-    "name": "Chess Study - Juego de Lógica",
-    "short_name": "Chess Study",
+    "name": "GamBit - Juego de Lógica",
+    "short_name": "GamBit",
     "description": "Juego de lógica basado en piezas de ajedrez",
     "start_url": "./index.html",
     "display": "standalone",

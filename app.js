@@ -1,5 +1,5 @@
 /**
- * Chess Study - Logic Game PWA
+ * GamBit - Logic Game PWA
  * Vanilla JS - Zero dependencies
  */
 
@@ -143,24 +143,46 @@ dom.controlButtons = [
 
 // ==================== BOARD ====================
 
+function isValidPosition(pos, pieceIndex) {
+    const row = Math.floor(pos / CONFIG.BOARD_SIZE);
+    const col = pos % CONFIG.BOARD_SIZE;
+
+    if (pieceIndex === 4 && row === 1 && col === 1) return false;
+    if (pieceIndex === 3 && (row + col) % 2 !== 0) return false;
+
+    return true;
+}
+
+function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 function generateCard() {
     state.boardRotation = 0;
     dom.board.style.transition = 'none';
     dom.board.style.transform = '';
 
-    const positions = Array.from({ length: CONFIG.BOARD_SIZE ** 2 }, (_, i) => i);
-
-    for (let i = positions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [positions[i], positions[j]] = [positions[j], positions[i]];
-    }
-
     state.board.forEach(row => row.fill(null));
 
+    const usedPositions = new Set();
+
     for (let i = 0; i < CONFIG.PIECE_COUNT; i++) {
-        const pos = positions[i];
-        const row = Math.floor(pos / CONFIG.BOARD_SIZE);
-        const col = pos % CONFIG.BOARD_SIZE;
+        const available = [];
+        for (let pos = 0; pos < CONFIG.BOARD_SIZE ** 2; pos++) {
+            if (!usedPositions.has(pos) && isValidPosition(pos, i)) {
+                available.push(pos);
+            }
+        }
+
+        const chosen = available[Math.floor(Math.random() * available.length)];
+        usedPositions.add(chosen);
+
+        const row = Math.floor(chosen / CONFIG.BOARD_SIZE);
+        const col = chosen % CONFIG.BOARD_SIZE;
         state.board[row][col] = CONFIG.PIECES[i].src;
     }
 

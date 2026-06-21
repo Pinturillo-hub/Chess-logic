@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chess-study-v2';
+const CACHE_NAME = 'gambit-v1';
 const FILES_TO_CACHE = [
     './',
     './index.html',
